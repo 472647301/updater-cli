@@ -89,7 +89,7 @@ const updateVersion = async (token: string, config: Options) => {
     // 将压缩文件写入输出流
     archive.pipe(output)
     // 添加目录进行压缩
-    archive.directory(outPath, false) // false 表示不保留目录的根目录名
+    archive.append(outPath, { name: 'app.asar' })
     // 压缩完成时执行操作
     archive.finalize()
     output.on('close', () => {
