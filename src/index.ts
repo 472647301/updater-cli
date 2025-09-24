@@ -50,11 +50,11 @@ const uploadZipFile = async (
     process.exit()
   }
   const form = new FormData()
-  form.append('desc', config.desc)
-  form.append('name', config.name)
-  form.append('ver', config.version)
-  form.append('channel', config.channel)
-  form.append('isMandatory', config.isMandatory)
+  if (config.desc) form.append('desc', config.desc)
+  if (config.name) form.append('name', config.name)
+  if (config.version) form.append('ver', config.version)
+  if (config.channel) form.append('channel', config.channel)
+  if (config.isMandatory) form.append('isMandatory', config.isMandatory)
   form.append('platform', config.platform.join(','))
   form.append('file', createReadStream(filePath))
   const response = await fetch(`${config.baseUrl}/version/upload`, {
@@ -62,8 +62,18 @@ const uploadZipFile = async (
     headers: { authorization: `Bearer ${token}` },
     body: form
   })
-  const data = await response.json()
-  console.log(chalk.green(tagName, data))
+  const data = (await response.json()) as { code: number; message?: string }
+  if (!data) {
+    console.log(chalk.red(tagName, 'File upload failed'))
+    process.exit()
+  }
+  if (data?.code) {
+    console.log(chalk.red(tagName, 'File upload failed'))
+    console.log(chalk.red(tagName, data.message))
+    process.exit()
+  } else {
+    console.log(chalk.green(tagName, JSON.stringify(data)))
+  }
 }
 
 const updateVersion = async (token: string, config: Options) => {

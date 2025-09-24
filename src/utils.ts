@@ -27,14 +27,17 @@ export function fetchCacheData(content: string) {
   let password: string | undefined
   const arr = content.split('\n')
   for (const str of arr) {
-    if (str.indexOf('token=')) {
+    if (str.indexOf('token=') !== -1) {
       token = str.split('=')[1]
+      continue
     }
-    if (str.indexOf('username=')) {
+    if (str.indexOf('username=') !== -1) {
       username = str.split('=')[1]
+      continue
     }
-    if (str.indexOf('password=')) {
+    if (str.indexOf('password=') !== -1) {
       password = str.split('=')[1]
+      continue
     }
   }
   return { token, username, password }
