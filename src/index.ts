@@ -4,9 +4,9 @@ import { Command } from 'commander'
 import { cosmiconfig } from 'cosmiconfig'
 import packageConfig from '../package.json' with { type: 'json' }
 import { adminLogin, fetchCacheData, to } from './utils.js'
+import { existsSync, readFileSync, unlinkSync } from 'fs'
 import { PlatformType, type Options } from './typing.js'
 import { createWriteStream, createReadStream } from 'fs'
-import { existsSync, readFileSync } from 'fs'
 import { input } from '@inquirer/prompts'
 import { homedir, platform } from 'os'
 import { join, dirname } from 'path'
@@ -63,6 +63,7 @@ const uploadZipFile = async (
     body: form
   })
   const data = (await response.json()) as { code: number; message?: string }
+  unlinkSync(filePath)
   if (!data) {
     console.log(chalk.red(tagName, 'File upload failed'))
     process.exit()
