@@ -1,0 +1,44 @@
+{
+  "name": "byron-updater-cli",
+  "version": "1.0.0",
+  "main": "dist/src/index.js",
+  "bin": {
+    "code-push": "dist/src/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/472647301/updater-cli.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/472647301/updater-cli/issues"
+  },
+  "homepage": "https://github.com/472647301/updater-cli#readme",
+  "description": "",
+  "devDependencies": {
+    "@types/archiver": "^6.0.3",
+    "@types/commander": "^2.12.5",
+    "@types/node": "18.16.12",
+    "prettier": "^3.6.2",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@inquirer/prompts": "^7.8.6",
+    "archiver": "^7.0.1",
+    "chalk": "^5.6.2",
+    "commander": "^14.0.1",
+    "cosmiconfig": "^9.0.0",
+    "form-data": "^4.0.4",
+    "node-fetch": "^3.3.2"
+  }
+}
