@@ -9,10 +9,11 @@ import { createWriteStream, createReadStream } from 'fs'
 import { existsSync, readFileSync } from 'fs'
 import { input } from '@inquirer/prompts'
 import { homedir, platform } from 'os'
+import { join, dirname } from 'path'
+import { fileURLToPath } from 'url'
 import FormData from 'form-data'
 import archiver from 'archiver'
 import fetch from 'node-fetch'
-import { join } from 'path'
 
 export { PlatformType, type Options } from './typing.js'
 
@@ -21,6 +22,7 @@ const explorer = cosmiconfig('updater-cli')
 
 const tagName = `${packageConfig.name}:`
 const cachePath = join(homedir(), '.updater-cli')
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 const setCacheData = async (baseUrl: string) => {
   const username = await input({ message: 'Enter username' })
