@@ -68,9 +68,12 @@ const uploadZipFile = async (
     console.log(chalk.red(tagName, 'File upload failed'))
     process.exit()
   }
-  if (data?.code) {
+  if (data.code) {
     console.log(chalk.red(tagName, 'File upload failed'))
     console.log(chalk.red(tagName, data.message))
+    if (data.code === 401) {
+      unlinkSync(cachePath)
+    }
     process.exit()
   } else {
     console.log(chalk.green(tagName, JSON.stringify(data)))
