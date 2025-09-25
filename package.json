@@ -1,6 +1,6 @@
 {
   "name": "byron-updater-cli",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "main": "dist/src/index.js",
   "bin": {
     "code-push": "dist/src/index.js"
@@ -26,7 +26,7 @@
   "homepage": "https://github.com/472647301/updater-cli#readme",
   "description": "",
   "devDependencies": {
-    "@types/archiver": "^6.0.3",
+    "@types/adm-zip": "^0.5.7",
     "@types/commander": "^2.12.5",
     "@types/node": "18.16.12",
     "prettier": "^3.6.2",
@@ -34,7 +34,7 @@
   },
   "dependencies": {
     "@inquirer/prompts": "^7.8.6",
-    "archiver": "^7.0.1",
+    "adm-zip": "^0.5.16",
     "chalk": "^5.6.2",
     "commander": "^14.0.1",
     "cosmiconfig": "^9.0.0",

@@ -3,17 +3,16 @@ import chalk from 'chalk'
 import { Command } from 'commander'
 import { cosmiconfig } from 'cosmiconfig'
 import packageConfig from '../package.json' with { type: 'json' }
+import { existsSync, readFileSync, unlinkSync, createReadStream } from 'fs'
 import { adminLogin, fetchCacheData, to } from './utils.js'
-import { existsSync, readFileSync, unlinkSync } from 'fs'
 import { PlatformType, type Options } from './typing.js'
-import { createWriteStream, createReadStream } from 'fs'
 import { input } from '@inquirer/prompts'
 import { homedir, platform } from 'os'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import FormData from 'form-data'
-import archiver from 'archiver'
 import fetch from 'node-fetch'
+import AdmZip from 'adm-zip'
 
 export { PlatformType, type Options } from './typing.js'
 
@@ -96,25 +95,15 @@ const updateVersion = async (token: string, config: Options) => {
       outPath = `dist/mac-arm64/${config.productName}.app/Contents/Resources/app.asar`
     }
     console.log(chalk.green(tagName, `Start compressing files`))
-    const output = createWriteStream(join(__dirname, '../app.zip'))
-    const archive = archiver('zip', {
-      zlib: { level: 9 } // 压缩级别，9 是最高级别
-    })
-    // 将压缩文件写入输出流
-    archive.pipe(output)
-    // 添加目录进行压缩
-    archive.append(outPath, { name: 'app.asar' })
-    // 压缩完成时执行操作
-    archive.finalize()
-    output.on('close', () => {
-      console.log(
-        chalk.green(
-          tagName,
-          `Compression completed, file size: ${archive.pointer()} bytes`
-        )
-      )
-      uploadZipFile(token, config, output.path as string)
-    })
+    const zipPath = join(__dirname, '../app.zip')
+    const zip = new AdmZip()
+    zip.addLocalFile(outPath)
+    const bool = await zip.writeZipPromise(zipPath)
+    if (!bool) {
+      console.log(chalk.red(tagName, 'Compression failed'))
+      process.exit()
+    }
+    uploadZipFile(token, config, zipPath)
   }
 }
 
