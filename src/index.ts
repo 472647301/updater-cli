@@ -53,7 +53,9 @@ const uploadZipFile = async (
   if (config.name) form.append('name', config.name)
   if (config.version) form.append('ver', config.version)
   if (config.channel) form.append('channel', config.channel)
-  if (config.isMandatory) form.append('isMandatory', config.isMandatory)
+  if (typeof config.isMandatory === 'number') {
+    form.append('isMandatory', `${config.isMandatory}`)
+  }
   form.append('platform', config.platform.join(','))
   form.append('file', createReadStream(filePath))
   const response = await fetch(`${config.baseUrl}/version/upload`, {
