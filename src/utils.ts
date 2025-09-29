@@ -1,10 +1,6 @@
 import http from 'http'
 import https from 'https'
 import { writeFileSync } from 'fs'
-import { homedir } from 'os'
-import { join } from 'path'
-
-const cachePath = join(homedir(), '.updater-cli')
 
 export async function to<T, U = Error>(
   promise: Promise<T>,
@@ -46,7 +42,8 @@ export function fetchCacheData(content: string) {
 export async function adminLogin(
   baseUrl: string,
   username: string,
-  password: string
+  password: string,
+  cachePath: string
 ) {
   const uri = URL.parse(baseUrl)
   if (!uri) throw Error('baseUrl err')

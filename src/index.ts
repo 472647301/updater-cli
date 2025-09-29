@@ -4,8 +4,8 @@ import { Command } from 'commander'
 import { cosmiconfig } from 'cosmiconfig'
 import packageConfig from '../package.json' with { type: 'json' }
 import { existsSync, readFileSync, unlinkSync, createReadStream } from 'fs'
+import { PlatformType, type Options, type VersionEntity } from './typing.js'
 import { adminLogin, fetchCacheData, to } from './utils.js'
-import { PlatformType, type Options } from './typing.js'
 import { input } from '@inquirer/prompts'
 import { homedir, platform } from 'os'
 import { join, dirname } from 'path'
@@ -14,22 +14,21 @@ import FormData from 'form-data'
 import fetch from 'node-fetch'
 import AdmZip from 'adm-zip'
 
-export { PlatformType, type Options } from './typing.js'
+export { PlatformType, type Options, type VersionEntity } from './typing.js'
 
 const program = new Command()
 const explorer = cosmiconfig('updater-cli')
 
 const tagName = `${packageConfig.name}:`
-const cachePath = join(homedir(), '.updater-cli')
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
-const setCacheData = async (baseUrl: string) => {
+const setCacheData = async (baseUrl: string, cachePath: string) => {
   const username = await input({ message: 'Enter username' })
   if (!username) process.exit()
   const password = await input({ message: 'Enter password' })
   if (!password) process.exit()
   console.log(chalk.green(tagName, `Get login credentials`))
-  const [err] = await to(adminLogin(baseUrl, username, password))
+  const [err] = await to(adminLogin(baseUrl, username, password, cachePath))
   if (err) {
     console.log(chalk.red(tagName, err))
   } else {
@@ -41,7 +40,8 @@ const setCacheData = async (baseUrl: string) => {
 const uploadZipFile = async (
   token: string,
   config: Options,
-  filePath: string
+  filePath: string,
+  cachePath: string
 ) => {
   console.log(chalk.green(tagName, `Start upload files`))
   if (!existsSync(filePath)) {
@@ -63,7 +63,11 @@ const uploadZipFile = async (
     headers: { authorization: `Bearer ${token}` },
     body: form
   })
-  const data = (await response.json()) as { code: number; message?: string }
+  const data = (await response.json()) as {
+    code: number
+    message?: string
+    data: VersionEntity
+  }
   unlinkSync(filePath)
   if (!data) {
     console.log(chalk.red(tagName, 'File upload failed'))
@@ -78,15 +82,25 @@ const uploadZipFile = async (
     process.exit()
   } else {
     console.log(chalk.green(tagName, JSON.stringify(data)))
+    if (config.success) config.success(data.data)
   }
 }
 
-const updateVersion = async (token: string, config: Options) => {
+const updateVersion = async (
+  token: string,
+  config: Options,
+  cachePath: string
+) => {
   const iOS = config.platform.includes(PlatformType.iOS)
   const zipName = iOS ? 'main.jsbundle.zip' : 'index.android.bundle.zip'
   const isMobile = iOS || config.platform.includes(PlatformType.Android)
   if (isMobile) {
-    await uploadZipFile(token, config, join(process.cwd(), `output/${zipName}`))
+    await uploadZipFile(
+      token,
+      config,
+      join(process.cwd(), `output/${zipName}`),
+      cachePath
+    )
   } else {
     let outPath = 'dist/win-unpacked/resources/app.asar'
     if (platform() !== 'win32') {
@@ -105,7 +119,7 @@ const updateVersion = async (token: string, config: Options) => {
       console.log(chalk.red(tagName, 'Compression failed'))
       process.exit()
     }
-    uploadZipFile(token, config, zipPath)
+    uploadZipFile(token, config, zipPath, cachePath)
   }
 }
 
@@ -138,16 +152,20 @@ const updateAction = async (name: string) => {
     console.log(chalk.red(tagName, 'Missing parameters platform'))
     process.exit()
   }
+  const cachePath = join(
+    homedir(),
+    `.${config.baseUrl.replace(/[^a-zA-Z]/g, '')}`
+  )
   if (!existsSync(cachePath)) {
-    await setCacheData(config.baseUrl)
+    await setCacheData(config.baseUrl, cachePath)
     return
   }
   const cacheContent = readFileSync(cachePath).toString()
   const cacheData = fetchCacheData(cacheContent)
   if (!cacheData.token) {
-    await setCacheData(config.baseUrl)
+    await setCacheData(config.baseUrl, cachePath)
   } else {
-    await updateVersion(cacheData.token, config)
+    await updateVersion(cacheData.token, config, cachePath)
   }
 }
 
