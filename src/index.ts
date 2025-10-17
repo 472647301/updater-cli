@@ -5,7 +5,7 @@ import { cosmiconfig } from 'cosmiconfig'
 import packageConfig from '../package.json' with { type: 'json' }
 import { existsSync, readFileSync, unlinkSync, createReadStream } from 'fs'
 import { PlatformType, type Options, type VersionEntity } from './typing.js'
-import { adminLogin, fetchCacheData, to } from './utils.js'
+import { adminLogin, createVersion, fetchCacheData, to } from './utils.js'
 import { input } from '@inquirer/prompts'
 import { homedir, platform } from 'os'
 import { join, dirname } from 'path'
@@ -27,12 +27,12 @@ const setCacheData = async (baseUrl: string, cachePath: string) => {
   if (!username) process.exit()
   const password = await input({ message: 'Enter password' })
   if (!password) process.exit()
-  console.log(chalk.green(tagName, `Get login credentials`))
+  console.log(chalk.green(tagName, `get login credentials`))
   const [err] = await to(adminLogin(baseUrl, username, password, cachePath))
   if (err) {
     console.log(chalk.red(tagName, err))
   } else {
-    console.log(chalk.green(tagName, 'Login successful'))
+    console.log(chalk.green(tagName, 'login successful'))
   }
   process.exit()
 }
@@ -43,9 +43,9 @@ const uploadZipFile = async (
   filePath: string,
   cachePath: string
 ) => {
-  console.log(chalk.green(tagName, `Start upload files`))
+  console.log(chalk.green(tagName, `start upload files`))
   if (!existsSync(filePath)) {
-    console.log(chalk.red(tagName, `Missing ${filePath}`))
+    console.log(chalk.red(tagName, `missing ${filePath}`))
     process.exit()
   }
   const form = new FormData()
@@ -70,11 +70,11 @@ const uploadZipFile = async (
   }
   unlinkSync(filePath)
   if (!data) {
-    console.log(chalk.red(tagName, 'File upload failed'))
+    console.log(chalk.red(tagName, 'file upload failed'))
     process.exit()
   }
   if (data.code) {
-    console.log(chalk.red(tagName, 'File upload failed'))
+    console.log(chalk.red(tagName, 'file upload failed'))
     console.log(chalk.red(tagName, data.message))
     if (data.code === 401) {
       unlinkSync(cachePath)
@@ -91,6 +91,26 @@ const updateVersion = async (
   config: Options,
   cachePath: string
 ) => {
+  if (config.downloadUrl) {
+    console.log(chalk.green(tagName, `start add version`))
+    const data = await createVersion(token, config)
+    if (!data) {
+      console.log(chalk.red(tagName, 'add version failed'))
+      process.exit()
+    }
+    if (data.code) {
+      console.log(chalk.red(tagName, 'add version failed'))
+      console.log(chalk.red(tagName, data.message))
+      if (data.code === 401) {
+        unlinkSync(cachePath)
+      }
+      process.exit()
+    } else {
+      console.log(chalk.green(tagName, JSON.stringify(data)))
+      if (config.success) config.success(data.data)
+    }
+    process.exit()
+  }
   const iOS = config.platform.includes(PlatformType.iOS)
   const zipName = iOS ? 'main.jsbundle.zip' : 'index.android.bundle.zip'
   const isMobile = iOS || config.platform.includes(PlatformType.Android)
@@ -105,18 +125,18 @@ const updateVersion = async (
     let outPath = 'dist/win-unpacked/resources/app.asar'
     if (platform() !== 'win32') {
       if (!config.productName) {
-        console.log(chalk.red(tagName, 'Missing parameters productName'))
+        console.log(chalk.red(tagName, 'missing parameters productName'))
         process.exit()
       }
       outPath = `dist/mac-arm64/${config.productName}.app/Contents/Resources/app.asar`
     }
-    console.log(chalk.green(tagName, `Start compressing files`))
+    console.log(chalk.green(tagName, `start compressing files`))
     const zipPath = join(__dirname, '../app.zip')
     const zip = new AdmZip()
     zip.addLocalFile(outPath)
     const bool = await zip.writeZipPromise(zipPath)
     if (!bool) {
-      console.log(chalk.red(tagName, 'Compression failed'))
+      console.log(chalk.red(tagName, 'compression failed'))
       process.exit()
     }
     uploadZipFile(token, config, zipPath, cachePath)
@@ -125,31 +145,31 @@ const updateVersion = async (
 
 const updateAction = async (name: string) => {
   console.log(chalk.green(tagName, `${name} start uploading`))
-  console.log(chalk.green(tagName, `Reading configuration`))
+  console.log(chalk.green(tagName, `reading configuration`))
   const [err, res] = await to(
     explorer.load(join(process.cwd(), 'updater-cli.config.ts'))
   )
   if (err || !res) {
-    console.log(chalk.red(tagName, err?.message || 'No updater-cli.ts file'))
+    console.log(chalk.red(tagName, err?.message || 'no updater-cli.ts file'))
     process.exit()
   }
-  console.log(chalk.green(tagName, `Configuration read successfully`))
+  console.log(chalk.green(tagName, `configuration read successfully`))
   const config = res.config as Options
   config.name = name || config.name
   if (!config.name) {
-    console.log(chalk.red(tagName, 'Missing parameters name'))
+    console.log(chalk.red(tagName, 'missing parameters name'))
     process.exit()
   }
   if (!config.baseUrl) {
-    console.log(chalk.red(tagName, 'Missing parameters baseUrl'))
+    console.log(chalk.red(tagName, 'missing parameters baseUrl'))
     process.exit()
   }
   if (!config.version) {
-    console.log(chalk.red(tagName, 'Missing parameters version'))
+    console.log(chalk.red(tagName, 'missing parameters version'))
     process.exit()
   }
   if (!config.platform.length) {
-    console.log(chalk.red(tagName, 'Missing parameters platform'))
+    console.log(chalk.red(tagName, 'missing parameters platform'))
     process.exit()
   }
   const cachePath = join(

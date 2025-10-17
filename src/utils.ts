@@ -1,6 +1,7 @@
 import http from 'http'
 import https from 'https'
 import { writeFileSync } from 'fs'
+import type { Options } from './typing.js'
 
 export async function to<T, U = Error>(
   promise: Promise<T>,
@@ -37,6 +38,59 @@ export function fetchCacheData(content: string) {
     }
   }
   return { token, username, password }
+}
+
+export async function createVersion(
+  token: string,
+  config: Options
+): Promise<any> {
+  const uri = URL.parse(config.baseUrl)
+  if (!uri) throw Error('baseUrl err')
+  const postData = JSON.stringify({
+    version: config.version,
+    desc: config.desc,
+    name: config.name,
+    downloadUrl: config.downloadUrl,
+    platform: config.platform.join(','),
+    channel: config.channel,
+    isMandatory: config.isMandatory
+  })
+
+  const isHttps = uri.protocol.indexOf('https') !== -1
+  const api = isHttps ? https : http
+
+  const options = {
+    method: 'POST',
+    port: uri.port,
+    hostname: uri.hostname,
+    path: `${uri.pathname}/version/create`,
+    headers: {
+      authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      'Content-Length': Buffer.byteLength(postData) // 计算数据长度
+    }
+  }
+  return new Promise((resolve, reject) => {
+    const req = api.request(options, res => {
+      let data = ''
+      res.on('data', chunk => {
+        data += chunk
+      })
+      res.on('end', () => {
+        try {
+          const json = JSON.parse(data)
+          resolve(json)
+        } catch (err) {
+          reject(err)
+        }
+      })
+    })
+    req.on('error', err => reject(err))
+    // 将数据写入请求主体
+    req.write(postData)
+    // 结束请求，发送数据
+    req.end()
+  })
 }
 
 export async function adminLogin(

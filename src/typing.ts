@@ -66,5 +66,7 @@ export interface Options {
    * 产品名称 桌面端会用到
    * */
   productName?: string
+  /** 下载链接 */
+  downloadUrl?: string
   success?: (data: VersionEntity) => void
 }
